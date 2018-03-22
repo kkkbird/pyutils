@@ -2,7 +2,7 @@
 
 ## batchqr
 
-批量生产固定格式的二维码
+批量生成一定格式的二维码
 
 ## fatalparser4golang
 
