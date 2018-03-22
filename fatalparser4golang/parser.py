@@ -172,6 +172,8 @@ def parselog(flist):
             "createdby": createdby,
         }
 
+    return infos
+
 
 def main(args):
     print(FLAGS)
