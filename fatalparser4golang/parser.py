@@ -51,8 +51,48 @@ def infomd5(info):
     return m.hexdigest()
 
 
-def parselog(flist):
+def printinfos(infos):
+    fatalerrors = infos["fatalerrors"]
+    infoMaps = infos["infomaps"]
 
+    if "unfinished" in infos:
+        print("="*20)
+
+        unfinished = infos["unfinished"]        
+        print("unfinished goroutine")        
+        print(unfinished["reason"], unfinished["callstacks"],
+              unfinished["createdby"])
+
+    if len(fatalerrors):
+        print("="*20)
+        print("%d Fatal error(s):" % len(fatalerrors))
+        for e in fatalerrors:
+            print(e)
+
+    print("="*20)
+    if len(infoMaps) > 0:
+        infos = sorted(infoMaps.items(), key=lambda v: v[1]["count"])
+        for k, v in infos:
+            print(k, v["count"], v["reason"], v["createdby"], len(v["addon"]))
+
+        print("="*20)
+        LIST_NUM = FLAGS.showtop
+        print("TOP %d routine call stack" % LIST_NUM)
+
+        for i, (k, v) in enumerate(infos[-LIST_NUM:]):
+            print("%d, REASON: %s, COUNT: %d, ADDONS:%d" %
+                  (LIST_NUM-i, v["reason"], v["count"], len(v["addon"])))
+            for sFunc, sFile in v["callstacks"]:
+                print(sFunc)
+                print("    %s" % sFile)
+
+            print(v["createdby"])
+            print("-"*10)
+    else:
+        print("no goroutine call stack")
+
+
+def parselog(flist):
     infoMaps = {}
     reason = ""
     callfunc = ""
@@ -120,37 +160,17 @@ def parselog(flist):
 
             state = STATE_NONE
 
+    infos = {
+        "fatalerrors": fatalerrors,
+        "infomaps": infoMaps,
+    }
+
     if state != STATE_NONE:
-        print("unfinished goroutine")
-        print(reason, callstacks, createdby)
-
-    print("="*20)
-    if len(fatalerrors):
-        print("%d Fatal error(s):" % len(fatalerrors))
-        for e in fatalerrors:
-            print(e)
-
-    print("="*20)
-    if len(infoMaps) > 0:
-        infos = sorted(infoMaps.items(), key=lambda v: v[1]["count"])
-        for k, v in infos:
-            print(k, v["count"], v["reason"], v["createdby"], len(v["addon"]))
-
-        print("="*20)
-        LIST_NUM = FLAGS.showtop
-        print("TOP %d routine call stack" % LIST_NUM)
-
-        for i, (k, v) in enumerate(infos[-LIST_NUM:]):
-            print("%d, REASON: %s, COUNT: %d, ADDONS:%d" %
-                  (LIST_NUM-i, v["reason"], v["count"], len(v["addon"])))
-            for sFunc, sFile in v["callstacks"]:
-                print(sFunc)
-                print("    %s" % sFile)
-
-            print(v["createdby"])
-            print("-"*10)
-    else:
-        print("no goroutine call stack")
+        infos["unfinished"] = {
+            "reason": reason,
+            "callstacks": callstacks,
+            "createdby": createdby,
+        }
 
 
 def main(args):
@@ -164,7 +184,9 @@ def main(args):
 
     print("Log files:", flist)
 
-    parselog(flist)
+    infos = parselog(flist)
+
+    printinfos(infos)
 
 
 if __name__ == '__main__':
