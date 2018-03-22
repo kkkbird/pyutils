@@ -58,8 +58,8 @@ def printinfos(infos):
     if "unfinished" in infos:
         print("="*20)
 
-        unfinished = infos["unfinished"]        
-        print("unfinished goroutine")        
+        unfinished = infos["unfinished"]
+        print("unfinished goroutine")
         print(unfinished["reason"], unfinished["callstacks"],
               unfinished["createdby"])
 

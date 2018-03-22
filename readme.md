@@ -1,4 +1,4 @@
-# PYTHON mini tools 
+# PYTHON mini tools
 
 ## batchqr
 
