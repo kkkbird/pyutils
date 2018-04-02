@@ -71,12 +71,24 @@ def printinfos(infos):
 
     print("="*20)
     if len(infoMaps) > 0:
+        print("Total routines type: %d" % len(infoMaps))
+
         infos = sorted(infoMaps.items(), key=lambda v: v[1]["count"])
+
+        c = 0
+        for k, v in infos:
+            c += v["count"]
+
+        print("Total routines count: %d" % c)
+
+        print("=" * 20)
+
         for k, v in infos:
             print(k, v["count"], v["reason"], v["createdby"], len(v["addon"]))
 
         print("="*20)
-        LIST_NUM = FLAGS.showtop
+        LIST_NUM = min(FLAGS.showtop, len(infos))
+
         print("TOP %d routine call stack" % LIST_NUM)
 
         for i, (k, v) in enumerate(infos[-LIST_NUM:]):
@@ -116,14 +128,14 @@ def parselog(flist):
             if reason:
                 state = STATE_READ_FUNC
         elif state == STATE_READ_FUNC:
-            if l.startswith("created by "):
+            if l.startswith("created by ") or l.startswith("main.main()"):
                 createdby = l
                 state = STATE_READ_CREATE_FILE
             else:
                 callfunc = l.rsplit("(", 1)[0]
                 state = STATE_READ_FILE
         elif state == STATE_READ_FILE:
-            if l.startswith("created by "):
+            if l.startswith("created by ") or l.startswith("main.main()"):
                 createdby = l
                 state = STATE_READ_CREATE_FILE
             else:
