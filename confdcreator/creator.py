@@ -29,6 +29,26 @@ def matchs(prefix, kvs):
     return _m
 
 
+def str_setting_env(k, v):
+    k = k[1:]  # omit first "/"
+    k = k.replace("/", "_")
+    k = k.upper()
+    return "%s=%s" % (k, v)
+
+
+def print_settings(kvs):
+    print_maps = {
+        "env": str_setting_env,
+    }
+    if FLAGS.backend in print_maps:
+        f = print_maps[FLAGS.backend]
+
+        for k, v in kvs.items():
+            print(f(k, v))
+    else:
+        print("Backend output of %s is not supported now" % FLAGS.backend)
+
+
 def create_confdfiles(f_in):
     basename = os.path.basename(f_in)
     src = basename + '.tmpl'
@@ -48,13 +68,14 @@ def create_confdfiles(f_in):
         with open(src_path, "wb") as f:
             f.write(b''.join(lines))
 
-        print(os.path.splitext(basename), basename)
         confd_name = os.path.splitext(basename)[0] + ".toml"
         confd_file = os.path.join(FLAGS.confdir, confd_name)
         with open(confd_file, "wb") as f:
             keys = map(lambda x: "    \"%s\"," % x, kvs.keys())
             f.write(T.format(src=src, dest=f_in,
                              keys="\n".join(keys)).encode('utf8'))
+
+        print_settings(kvs)
 
 
 def main(args):
