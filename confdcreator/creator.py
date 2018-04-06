@@ -35,7 +35,7 @@ def matchs(prefix, kvs, subs):
         else:
             full_key = k
         kvs[full_key] = v
-        return "\"{{getv %s}}\"" % full_key
+        return "{{getv \"%s\"}}" % full_key
     return _m
 
 
