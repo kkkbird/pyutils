@@ -1,4 +1,4 @@
-#! /bin/python
+#! /usr/bin/python3
 
 import os
 import argparse
@@ -11,7 +11,6 @@ import re
 #confd: {{||default_value}} - just a subsitution without key
 '''
 
-FLAGS = None
 
 LINE_KEY_CONFD = "#confd:"
 
@@ -30,7 +29,7 @@ def matchs(prefix, kvs, subs):
         if k == '':
             subs.append(v)
             return v
-        if len(prefix) > 0:
+        if len(prefix) > 0 and (not k.startswith('/')):
             full_key = "%s/%s" % (prefix, k)
         else:
             full_key = k
@@ -43,46 +42,71 @@ def str_setting_env(k, v):
     k = k[1:]  # omit first "/"
     k = k.replace("/", "_")
     k = k.upper()
+    #v = v.replace("$", "$$")
     return "%s=%s" % (k, v)
 
 
-def print_backend_settings(kvs):
-    print_maps = {
-        "env": str_setting_env,
-    }
+def str_setting_etcd(k, v):
+    return "etcdctl set {k} {v}".format(k=k, v=v)
 
-    if FLAGS.backend in print_maps:
-        f = print_maps[FLAGS.backend]
-        print("  >> Backend setting for %s:" % FLAGS.backend)
-        for k, v in kvs.items():
-            print(f(k, v))
-    else:
-        print("  >> Backend output of %s is not supported now" % FLAGS.backend)
+
+def str_setting_redis(k, v):
+    return "redis-cli set {k} {v}".format(k=k, v=v)
+
+
+def str_setting_consul(k, v):
+    return "curl -X PUT -d '{v}' http://localhost:8500/v1/kv{k}".format(k=k, v=v)
+
+
+def str_setting_rancher(k, v):
+    return ""
 
 
 def print_kvs_and_subs(kvs, subs):
     if len(kvs) > 0:
         print("  >> KVS:")
-        for k, v in kvs.items():
-            print("{:>25} : {}".format(k, v))
+        for k in sorted(kvs.keys()):
+            print("{:>25} : {}".format(k, kvs[k]))
     if len(subs) > 0:
         print("  >> SUBS:")
-        for s in subs:
+        for s in sorted(subs):
             print("      {}".format(s))
 
 
-def create_confdfiles(f_in):
+def create_backend_setttings(options, kvs):
+    b = []
+    backend_maps = {
+        "env": str_setting_env,
+        "etcd": str_setting_etcd,
+        "redis": str_setting_redis,
+        "consul": str_setting_consul,
+    }
+
+    if 'fmt' in options and options['fmt'] != "":
+        for k, v in kvs.items():
+            b.append(options['fmt'].format(k=k, v=v))
+        return sorted(b)
+
+    if options["backend"] in backend_maps:
+        f = backend_maps[options["backend"]]
+        for k, v in kvs.items():
+            b.append(f(k, v))
+        return sorted(b)
+            
+    return b
+
+
+def create_confdfile(options, f_in):
+    global LINE_KEY_CONFD, T
+
     basename = os.path.basename(f_in)
     src = basename + '.tmpl'
-    src_path = os.path.join(FLAGS.templatesdir, src)
+    src_path = os.path.join(options["templatesdir"], src)
 
     lines = []
     kvs = {}
     subs = []
-    m = matchs(FLAGS.prefix, kvs, subs)
-
-    print("-" * 25)
-    print(">> Check %s" % f_in)
+    m = matchs(options["prefix"], kvs, subs)
 
     with open(f_in, "rb") as f:
         for l in f.readlines():
@@ -93,40 +117,59 @@ def create_confdfiles(f_in):
                 l = re.sub(r"\{\{([^\|]*)\|\|([^\}]+)\}\}", m, l)
             lines.append(l.encode('utf8'))
 
-    print_kvs_and_subs(kvs, subs)
-
     if len(kvs) > 0:
         with open(src_path, "wb") as f:
             f.write(b''.join(lines))
 
         confd_name = os.path.splitext(basename)[0] + ".toml"
-        confd_file = os.path.join(FLAGS.confdir, confd_name)
+        confd_file = os.path.join(options["confdir"], confd_name)
         with open(confd_file, "wb") as f:
-            keys = map(lambda x: "    \"%s\"," % x, kvs.keys())
+            keys = map(lambda x: "    \"%s\"," % x, sorted(kvs.keys()))
             f.write(T.format(src=src, dest=f_in,
                              keys="\n".join(keys)).encode('utf8'))
 
-        print_backend_settings(kvs)
+    return {
+        "kvs": kvs,
+        "subs": subs,
+    }
 
 
-def main(args):
-    print("FLAGS:")
-    for k, v in FLAGS.__dict__.items():
-        print("{:>15} : {}".format(k, v))
+def create_confdfiles(options):
+    if not os.path.isdir(options['srcdir']):
+        print("Err: cannot find %s" % options['srcdir'])
+        return
 
-    if len(FLAGS.prefix) > 0 and not FLAGS.prefix.startswith('/'):
-        print("Err: Prefix must start with '/'")
-        exit(-1)
-
-    for p in [FLAGS.outdir, FLAGS.confdir, FLAGS.templatesdir]:
+    for p in (options['outdir'], options['confdir'], options['templatesdir']):
         if not os.path.exists(p):
             os.mkdir(p)
 
-    for fname in glob.iglob(FLAGS.inputpattern):
-        create_confdfiles(fname)
+    for fname in glob.iglob(options['inputpattern']):
+        print("-" * 25)
+        print(">> Check %s" % fname)
+        out = create_confdfile(options, fname)
+        print_kvs_and_subs(out['kvs'], out['subs'])
+
+        if len(out['kvs']) > 0:
+            backends = create_backend_setttings(options, out['kvs'])
+            print("  >> Backend setting for %s:" % options["backend"])
+            for b in backends:
+                print(b)
 
 
-if __name__ == "__main__":
+def _main(args):
+    options = args.__dict__
+
+    for k, v in options.items():
+        print("{:>15} : {}".format(k, v))
+
+    if len(options['prefix']) > 0 and not options["prefix"].startswith('/'):
+        print("Err: Prefix must start with '/'")
+        exit(-1)
+
+    create_confdfiles(options)
+
+
+def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -161,8 +204,22 @@ if __name__ == "__main__":
         help='backend type for confd output'
     )
 
-    FLAGS, unparsed = parser.parse_known_args()
+    parser.add_argument(
+        '-f',
+        '--fmt',
+        type=str,
+        default="",
+        help='backend output format'
+    )
 
-    FLAGS.confdir = os.path.join(FLAGS.outdir, "conf.d")
-    FLAGS.templatesdir = os.path.join(FLAGS.outdir, "templates")
-    main(unparsed)
+    args = parser.parse_args()
+
+    args.srcdir = os.path.dirname(args.inputpattern)
+    args.confdir = os.path.join(args.outdir, "conf.d")
+    args.templatesdir = os.path.join(args.outdir, "templates")
+
+    _main(args)
+
+
+if __name__ == "__main__":
+    main()
