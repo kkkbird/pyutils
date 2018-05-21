@@ -47,7 +47,8 @@ def mergeLayaGameJS(indir, srcs):
             with codecs.open(path, 'r', 'utf-8') as fin:
                 fmerged.write(
                     "// By laya minigame creator: merge source {}\n".format(src))
-                fmerged.write(fin.read())
+                fmerged.write(fin.read())                
+                fmerged.write("\n")
 
     return outName
 
