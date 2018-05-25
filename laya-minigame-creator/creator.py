@@ -61,8 +61,7 @@ def copyScripts2Out(indir, scripts, outdir):
         srcPath = os.path.join(indir, f)
         dstPath = os.path.join(outdir, f)
         dstDir = os.path.split(dstPath)[0]
-        if not (os.path.exists(dstDir) and os.path.isdir(dstDir)):
-            os.mkdir(dstDir)
+        os.makedirs(dstDir, exist_ok=True)
         print("copy {} to {}".format(srcPath, dstPath))
         shutil.copy(srcPath, dstPath)
 
