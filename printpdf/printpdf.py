@@ -39,9 +39,12 @@ def convert_to_printable_pdf(in_name, style):
         pdfout = PdfFileWriter()
 
         count = pdfin.getNumPages()
+
+        box = pdfin.getPage(0).mediaBox        
+        
         for page in order_for_printer(count, style):
             if page == -1:
-                pdfout.addBlankPage()
+                pdfout.addBlankPage(width=box.getWidth(),height=box.getHeight())
             elif page == -2:
                 pdfout.write(fout1)
                 del pdfout
