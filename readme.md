@@ -15,3 +15,7 @@ GOLANG异常log分析
 ## laya-minigame-creator
 
 layaair 生成小游戏工具
+
+## ldifcreator
+
+通过模板生成ldif的示例

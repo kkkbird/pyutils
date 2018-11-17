@@ -4,3 +4,6 @@ fatalparser4golang/*.txt
 confdcreator/confd
 printpdf/*.pdf
 nginxconformatter/*.conf
+printallfiles/**/
+printallfiles/*.txt
+readetcd3/*.etcd
