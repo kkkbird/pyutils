@@ -163,3 +163,9 @@ groups:
     expr: node_nfs_rpc_operations
   - record: node_nfs_rpc_retransmissions_total
     expr: node_nfs_rpc_retransmissions
+  - record: node_filesystem_size_bytes
+    expr: node_filesystem_size
+  - record: node_filesystem_avail_bytes
+    expr: node_filesystem_avail
+  - record: node_filesystem_free_bytes
+    expr: node_filesystem_free
