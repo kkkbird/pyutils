@@ -23,3 +23,8 @@ layaair 生成小游戏工具
 ## node_exporter_0.16.0
 
 * to-0-16-0.py: 将node_exporter <0.16.0 dashboard或alert的json文件修改为适合值
+
+
+## kuyiTone
+
+* 一个用于将简谱转换工具，可在PC上用beep来播放及输出频率和时长的数组

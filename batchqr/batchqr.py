@@ -11,7 +11,7 @@ def make_qr(data, save_path, logo=""):
         border=2, #边框的格子宽度大小
     )
     qr.add_data(data)
-    qr.make(fit=True)
+    qr.make(fit=True)    
  
     img=qr.make_image()
 

@@ -7,3 +7,6 @@ nginxconformatter/*.conf
 printallfiles/**/
 printallfiles/*.txt
 readetcd3/*.etcd
+qr/
+build/
+dist
