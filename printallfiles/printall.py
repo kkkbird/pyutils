@@ -7,8 +7,11 @@ def printfiles(files, outname, codec):
     with codecs.open(outname, "wb", encoding=codec) as fh:
         for f in files:
             fh.write("[{}]\n".format(f))
-            with codecs.open(f, "rb", codec) as infile:
-                fh.write(infile.read())
+            with open(f, "rb") as infile:
+                try:
+                    fh.write(infile.read().decode(codec))
+                except UnicodeDecodeError:
+                    print(f)                
                 fh.write("\n")
 
 
