@@ -8,7 +8,7 @@ import base64
 import struct
 
 
-def parseTone(tone: str):
+def parseTone(tone: str) -> int:
     baseTone = 25  # C调的do的index
     tone = tone.strip()
 
@@ -38,7 +38,7 @@ def parseTone(tone: str):
     return baseTone
 
 
-def parseBeat(beat: str, baseTone: int, bpm: int):
+def parseBeat(beat: str, baseTone: int, bpm: int) -> tuple[int, int]:
     beat = beat.strip()
     desc = beat[1:]
     tone = baseTone

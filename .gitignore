@@ -1,3 +1,5 @@
+*.spec
+*.pyc
 laya-minigame-creator/bin
 laya-minigame-creator/release
 fatalparser4golang/*.txt

@@ -11,7 +11,7 @@ def printfiles(files, outname, codec):
                 try:
                     fh.write(infile.read().decode(codec))
                 except UnicodeDecodeError:
-                    print(f)                
+                    print(f)
                 fh.write("\n")
 
 
